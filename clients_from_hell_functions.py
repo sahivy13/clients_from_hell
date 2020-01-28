@@ -18,7 +18,7 @@ url = 'https://clientsfromhell.net/'
 
 def get_categories(url):
     html = requests.get(url)
-    response = bs(html.content)
+    response = bs(html.content, features="html.parser")
     get_items = [category for category in response.find_all('li', {'class':'flex items-center'})]
     categories = ['Dunces','Criminals','Deadbeats','Racists','Homophobes','Sexist','Frenemies','Cryptic','Ingrates','Chaotic Good']
     category_pair = []
@@ -44,7 +44,7 @@ def page_num_creator(url_category_list : list):
     list_url_num =[]
     for url in url_category_list:
         html = requests.get(url[0]+'1')
-        response = bs(html.content)
+        response = bs(html.content, "html.parser")
         list_items = response.find_all('a',{'class':'page-numbers'})
 
         len_=len(list_items)-2
@@ -182,3 +182,5 @@ def cleaning(df : pd.DataFrame):
 var = pipe(url, get_categories, url_categroy_creator, page_num_creator, initialize_scraping)
 df_clients_og = pd.DataFrame.from_dict(var, orient = 'index').fillna('').transpose()
 cleaning(df_clients_og)
+
+pd.DataFrame(var).to_csv('cfh_test_df.csv')
