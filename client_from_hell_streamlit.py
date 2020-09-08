@@ -28,8 +28,8 @@ st.title("Client From Hell Classifier")
 st.text('The data used for this projects has was scraped from the following URL: https://clientsfromhell.net/')
 
 
-image = Image.open('bagw.jpg')
-st.image(image,width=560,use_column_width=False,format='PNG')
+# image = Image.open('bagw.jpg')
+# st.image(image,width=560,use_column_width=False,format='PNG')
 
 #Data scraper
 def get_categories():
