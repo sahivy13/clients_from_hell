@@ -1,6 +1,7 @@
 import warnings
 warnings.filterwarnings("ignore")
 
+import functools
 import streamlit as st
 
 st.title('Clients From Hell project')
@@ -13,11 +14,11 @@ import numpy as np
 from nltk.stem import PorterStemmer
 from nltk.corpus import stopwords
 from collections import Counter
-import functools
-# import operator
 import string
+
+# import operator
+
 from sklearn.model_selection import train_test_split
-from collections import Counter
 
 from sklearn.linear_model import LogisticRegression
 from sklearn.neighbors import KNeighborsClassifier
@@ -54,6 +55,8 @@ import plotly.express as px
 @st.cache(suppress_st_warning=True)
 
 # url = "https://clientsfromhell.net/"
+
+#---Scrapper---
 
 def pipe(obj, *fns):
     return functools.reduce(lambda x, y: y(x), [obj] + list(fns))
@@ -122,8 +125,10 @@ class IronhackSpider:
             list_pages.append(self.scrape_url(self.url_pattern % i))            
         return list_pages
 
-def content_parser(content):
-    return content
+
+# def content_parser(content):
+#     return content
+
 
 def case_parser(content):
     all_content = bs(content, "html.parser")
@@ -150,6 +155,8 @@ def initialize_scraping(url_pagenum_cat_list : list):
         html_cont_dict.update({CAT: content})
         
     return html_cont_dict
+
+#---Preprocessing---
 
 def stem(sentence : string):
     p = PorterStemmer()
@@ -257,6 +264,8 @@ def catetory_replacer(df, col = 'category'):
     df[col].replace(to_replace = dic_cat, inplace = True)
     
     return df, dic_cat
+
+#---Regression tools
 
 def t_t_split(df, target_col = 'category'):
     
@@ -616,11 +625,7 @@ def hist_of_target_creator(df, target = 'category'):
 def streamlit_pipe_write_before(df_):
     st.write(f"**Before Undersampling (This shows 1 for Deadbeats, and 0 for non-Deadbeats)**")
     return(df_)
-
-def streamlit_pipe_write_after(df_):
-    st.write(f"**After**")
-    return(df_)
-
+    
 def streamlit_pipe_write_after(df_):
     st.write(f"**After**")
     return(df_)
@@ -632,8 +637,6 @@ def streamlit_pipe_write_paragraph(url):
     st.write(f"any dialogues, specifically what the client would say per case.")
     st.write(f"the rest of the process can be explained by the line of code above.")
     return(url)
-
-
 
 #      ****FINAL PIPELINE****
 
