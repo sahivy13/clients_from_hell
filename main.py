@@ -10,6 +10,10 @@ import matplotlib.pyplot as plt
 import plotly.figure_factory as ff
 import plotly.express as px
 
+import scrapper as S
+import clientsfh_preprocessing as CP
+import regression_models as RM
+
 @st.cache(suppress_st_warning=True)
 
 def main_pipe(obj, *fns):
@@ -45,10 +49,6 @@ def streamlit_pipe_write_paragraph(url):
     st.write(f"any dialogues, specifically what the client would say per case.")
     st.write(f"the rest of the process can be explained by the line of code above.")
     return(url)
-
-import scrapper as S
-import clientsfh_preprocessing as CP
-import regression_models as RM
 
 with st.echo():
     main_pipe(
