@@ -29,7 +29,7 @@ def scrappe_pipe(obj, *fns):
 
 def hist_of_target_creator(df, target = 'category'):
  
-    fig = px.histogram(df, x = target, y = target) #, color="sex", marginal="rug", hover_data=tips.columns)
+    fig = px.histogram(df, x = target) #, color="sex", marginal="rug", hover_data=tips.columns)
 
     # Plot!
     st.plotly_chart(fig)

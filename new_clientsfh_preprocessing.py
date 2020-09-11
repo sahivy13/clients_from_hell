@@ -90,9 +90,9 @@ def cleaning(df : pd.DataFrame):
 
     return df_cases
 
-def catetory_replacer(df, col = 'category', mul = False, main_cat = "Deadbeats"):
+def catetory_replacer(df, col = 'category', mult = False, main_cat = "Deadbeats"):
 
-    if mul == True: #--- MULTILABEL ---
+    if mult == True: #--- MULTILABEL ---
         dic_cat = {}
         for i, cat in enumerate(list(df[col].unique())):
             dic_cat[cat] = i
