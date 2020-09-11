@@ -1,5 +1,7 @@
 import pandas as pd
 import numpy as np
+import os
+import copy
 
 import streamlit as st
 
@@ -11,6 +13,9 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.naive_bayes import BernoulliNB
 from sklearn.naive_bayes import GaussianNB
 from sklearn.model_selection import KFold
+
+# Model saving
+import pickle
 
 # Math function needed for models
 from math import sqrt
@@ -29,27 +34,83 @@ from sklearn.metrics import f1_score
 # from sklearn.feature_extraction.text import TfidfVectorizer -> imported by another .py file
 from sklearn.preprocessing import MinMaxScaler
 
+# Stating random seed
+np.random.seed(42)
+
 def all_num_models_fitting(X_train, y_train):
 
-    log_regr = LogisticRegression(solver = 'lbfgs')
-    log_regr.fit(X_train, y_train.values.ravel())
+    if os.path.isfile('rfc'):
 
-    knn = KNeighborsClassifier(n_neighbors = 3) # k = 5 by default
-    knn.fit(X_train, y_train.values.ravel())
+        list_ = ['log_regr', 'knn', 'multi', 'rfc']
 
-    multi = MultinomialNB()
-    multi.fit(X_train, y_train.values.ravel())
+        with open (list_[0], 'rb') as f :
+            log_regr = pickle.load(f)
 
-    rfc = RandomForestClassifier(max_depth=10, random_state=42)
-    rfc.fit(X_train, y_train.values.ravel())
+        with open (list_[1], 'rb') as f :
+            knn = pickle.load(f)
+
+        with open (list_[2], 'rb') as f :
+            multi = pickle.load(f)
+
+        with open (list_[3], 'rb') as f :
+            rfc = pickle.load(f)
+
+    else:
+        log_regr = LogisticRegression(solver = 'lbfgs')
+        log_regr.fit(X_train, y_train.values.ravel())
+        # d_log_regr = copy.deepcopy(log_regr)
+
+        knn = KNeighborsClassifier(n_neighbors = 3) # k = 5 by default
+        knn.fit(X_train, y_train.values.ravel())
+        # d_knn = copy.deepcopy(knn)
+
+        multi = MultinomialNB()
+        multi.fit(X_train, y_train.values.ravel())
+        # d_multi = copy.deepcopy(multi)
+        
+        rfc = RandomForestClassifier(max_depth=10, random_state=42)
+        rfc.fit(X_train, y_train.values.ravel())
+        # d_rfc = copy.deepcopy(rfc)
+
+        list_ = [('log_regr', log_regr), ('knn', knn), ('multi', multi), ('rfc', rfc)]
+
+        for mod in list_:
+            with open (mod[0], 'wb') as f:
+                pickle.dump(mod[1],f) 
+
+            # with open (mod[0], 'rb') as f :
+            #     mod[1] = pickle.load(f)
     
     return log_regr, knn, multi, rfc
 
 def all_bool_models_fitting(X_train, y_train):
 
-    bernoulli = BernoulliNB().fit(X_train, y_train.values.ravel())
+    if os.path.isfile('guassian'):
 
-    guassian = GaussianNB().fit(X_train, y_train.values.ravel())
+        list_ = ['bernoulli', 'guassian']
+
+        with open (list_[0], 'rb') as f :
+            bernoulli = pickle.load(f)
+
+        with open (list_[1], 'rb') as f :
+            guassian = pickle.load(f)
+
+    else: 
+
+        bernoulli = BernoulliNB().fit(X_train, y_train.values.ravel())
+        # d_bernoulli = copy.deepcopy(bernoulli)
+        
+        guassian = GaussianNB().fit(X_train, y_train.values.ravel())
+        # d_guassian = copy.deepcopy(guassian)
+        
+        list_ = [('bernoulli', bernoulli), ('guassian', guassian)]
+
+        for mod in list_:
+            with open (mod[0], 'wb') as f:
+                pickle.dump(mod[1],f)
+            
+            # with open (mod[0], 'rb') as f :
+            #     mod[1] = pickle.load(f)
     
     return bernoulli, guassian
 

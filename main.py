@@ -14,6 +14,8 @@ import scrapper as S
 import clientsfh_preprocessing as CP
 import regression_models as RM
 
+import os.path
+
 @st.cache(suppress_st_warning=True)
 
 def main_pipe(obj, *fns):
@@ -50,24 +52,61 @@ def streamlit_pipe_write_paragraph(url):
     st.write(f"the rest of the process can be explained by the line of code above.")
     return(url)
 
-with st.echo():
-    main_pipe(
-        scrappe_pipe(
-            "https://clientsfromhell.net/",
-            streamlit_pipe_write_paragraph,
-            S.get_categories,
-            S.url_categroy_creator,
-            S.page_num_creator,
-            S.initialize_scraping,
-            CP.df_creator,
-            CP.cleaning,
-            hist_of_target_creator, 
-            CP.catetory_replacer
-        )[0],
-        streamlit_pipe_write_before,
-        hist_of_target_creator,
-        CP.under_sampling_to_2_col_by_index,
-        streamlit_pipe_write_after,hist_of_target_creator,
-        CP.convert_to_tfidf,
-        RM.run_all_models_and_score_k_fold
-)
+if os.path.isfile('scrapped_data.csv'):
+
+    with st.echo():
+        main_pipe(
+            CP.data_from_csv('scrapped_data.csv'),
+            streamlit_pipe_write_before,
+            hist_of_target_creator,
+            CP.under_sampling_to_2_col_by_index,
+            streamlit_pipe_write_after,hist_of_target_creator,
+            CP.convert_to_tfidf,
+            RM.run_all_models_and_score_k_fold
+        )
+else:
+    with st.echo():
+        main_pipe(
+            scrappe_pipe(
+                "https://clientsfromhell.net/",
+                streamlit_pipe_write_paragraph,
+                S.get_categories,
+                S.url_categroy_creator,
+                S.page_num_creator,
+                S.initialize_scraping,
+                CP.df_creator,
+                CP.cleaning,
+                hist_of_target_creator, 
+                CP.catetory_replacer,
+                CP.data_to_csv
+                ),
+            streamlit_pipe_write_before,
+            hist_of_target_creator,
+            CP.under_sampling_to_2_col_by_index,
+            streamlit_pipe_write_after,hist_of_target_creator,
+            CP.convert_to_tfidf,
+            RM.run_all_models_and_score_k_fold
+        )
+
+# with st.echo():
+#     main_pipe(
+#         scrappe_pipe(
+#             "https://clientsfromhell.net/",
+#             streamlit_pipe_write_paragraph,
+#             S.get_categories,
+#             S.url_categroy_creator,
+#             S.page_num_creator,
+#             S.initialize_scraping,
+#             CP.df_creator,
+#             CP.cleaning,
+#             hist_of_target_creator, 
+#             CP.catetory_replacer,
+#             CP.data_to_csv
+#             ),
+#         streamlit_pipe_write_before,
+#         hist_of_target_creator,
+#         CP.under_sampling_to_2_col_by_index,
+#         streamlit_pipe_write_after,hist_of_target_creator,
+#         CP.convert_to_tfidf,
+#         RM.run_all_models_and_score_k_fold
+#     )

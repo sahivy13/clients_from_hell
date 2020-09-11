@@ -19,6 +19,7 @@ import string
 # import operator
 
 from sklearn.model_selection import train_test_split
+from collections import Counter
 
 from sklearn.linear_model import LogisticRegression
 from sklearn.neighbors import KNeighborsClassifier
