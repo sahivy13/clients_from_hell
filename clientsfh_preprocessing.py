@@ -7,6 +7,9 @@ from collections import Counter
 import string
 from sklearn.feature_extraction.text import TfidfVectorizer
 
+# Stating random seed
+np.random.seed(42)
+
 def df_creator(dic_):
     df_ = pd.DataFrame.from_dict(dic_, orient = 'index').fillna('').transpose()
     return df_
@@ -90,7 +93,7 @@ def cleaning(df : pd.DataFrame):
 
     return df_cases
 
-def catetory_replacer(df, col = 'category', mul = False, main_cat = "Deadbeats"):
+def catetory_replacer(df, col = 'category', mul = True, main_cat = "Deadbeats"):
 
     if mul == True: #--- MULTILABEL ---
         dic_cat = {}
@@ -148,8 +151,8 @@ def convert_to_tfidf(df, case_col = 'case', target_col = 'category'):
     
     return df_
 
-def data_to_csv(obj_df_dic):
-    obj_df_dic[0].to_csv("scrapped_data.csv")
+def data_to_csv(obj_df_dic, now):
+    obj_df_dic[0].to_csv("data/data.csv" ) # now variable is a global variable in main.py
     df = obj_df_dic[0]
     return df
 

@@ -14,8 +14,11 @@ import scrapper as S
 import clientsfh_preprocessing as CP
 import regression_models as RM
 
-import os.path
+import glob
+import os
+import platform
 
+# Streamlit Cache
 @st.cache(suppress_st_warning=True)
 
 def main_pipe(obj, *fns):
@@ -52,20 +55,51 @@ def streamlit_pipe_write_paragraph(url):
     st.write(f"the rest of the process can be explained by the line of code above.")
     return(url)
 
-if os.path.isfile('scrapped_data.csv'):
+def move_old(folder):
+    def creation_date(path_to_file):
+    
+        if platform.system() == 'Windows':
+            return os.path.getctime(path_to_file)
+        else:
+            stat = os.stat(path_to_file)
+            try:
+                return stat.st_birthtime
+            except AttributeError:
+                # We're probably on Linux. No easy way to get creation dates here,
+                # so we'll settle for when its content was last modified.
+                return stat.st_mtime
 
-    with st.echo():
-        main_pipe(
-            CP.data_from_csv('scrapped_data.csv'),
-            streamlit_pipe_write_before,
-            hist_of_target_creator,
-            CP.under_sampling_to_2_col_by_index,
-            streamlit_pipe_write_after,hist_of_target_creator,
-            CP.convert_to_tfidf,
-            RM.run_all_models_and_score_k_fold
+    def move_data():
+        os.rename(
+        f"{folder}/{folder}.csv",
+        f"{folder}/previous_{folder}/{folder}_{creation_date(f'{folder}/{folder}.csv')}.csv"
         )
+    
+    move_data()
+
+if os.path.isfile('data/data.csv'):
+    
+    move_old('data')
+
+    if os.path.isfile('gaussian/gaussian'):
+    
+    else:
+
+        with st.echo():
+            main_pipe(
+                CP.data_from_csv('data/data.csv'),
+                hist_of_target_creator,
+                streamlit_pipe_write_before,
+                hist_of_target_creator,
+                CP.under_sampling_to_2_col_by_index,
+                streamlit_pipe_write_after,hist_of_target_creator,
+                CP.convert_to_tfidf,
+                RM.run_all_models_and_score_k_fold
+            )
+
 else:
     with st.echo():
+
         main_pipe(
             scrappe_pipe(
                 "https://clientsfromhell.net/",
@@ -80,6 +114,7 @@ else:
                 CP.catetory_replacer,
                 CP.data_to_csv
                 ),
+            hist_of_target_creator,
             streamlit_pipe_write_before,
             hist_of_target_creator,
             CP.under_sampling_to_2_col_by_index,

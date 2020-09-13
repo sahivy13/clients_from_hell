@@ -34,8 +34,8 @@ from sklearn.metrics import f1_score
 # from sklearn.feature_extraction.text import TfidfVectorizer -> imported by another .py file
 from sklearn.preprocessing import MinMaxScaler
 
-# Stating random seed
-np.random.seed(42)
+# # Stating random seed
+# np.random.seed(42)
 
 def all_num_models_fitting(X_train, y_train):
 
