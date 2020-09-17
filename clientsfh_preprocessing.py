@@ -9,7 +9,8 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from imblearn.under_sampling import RandomUnderSampler
 from imblearn.over_sampling import RandomOverSampler
 import pickle
-
+import streamlit as st
+import os
 # Stating random seed
 np.random.seed(42)
 
@@ -124,14 +125,36 @@ def catetory_replacer(df, col = 'category', mul = True, main_cat = "Deadbeats"):
     return df, dic_cat
 
 def over_under_sampling(df):
+    n_y_num_samples = st.sidebar.selectbox("Manually choose number of samples?", ("No", "Yes"))
 
     list_count = Counter(df['category']).most_common()
     mid_num = int(((list_count[0][1]-list_count[9][1])/2))
     mid_num = mid_num+list_count[9][1]
+
+    if n_y_num_samples == "Yes":
+        num_samples = st.sidebar.slider(
+            "Choose # of samples for each category:",
+            min_value=list_count[9][1],
+            max_value=list_count[0][1],
+            value=mid_num
+        )
+        if st.sidebar.button("Re-Train"):
+            for path in ['bernoulli', 'guassian', 'knn', 'log_regr', 'multi', 'rfc']:
+                if os.path.exists(path):
+                    os.remove(path)
+            st.caching.clear_cache()
+    else:
+        num_samples = mid_num
+        if st.sidebar.button("Re-Train"):
+            for path in ['bernoulli', 'guassian', 'knn', 'log_regr', 'multi', 'rfc']:
+                if os.path.exists(path):
+                    os.remove(path)
+            st.caching.clear_cache()
+            
     strategy = dict(Counter(df['category']))
     for i in range(len(strategy)):
-        if strategy[i] < mid_num:
-            strategy[i] = mid_num
+        if strategy[i] < num_samples:
+            strategy[i] = num_samples
     ros = RandomOverSampler(sampling_strategy=strategy, random_state=42)
     rus = RandomUnderSampler(random_state=42)
 

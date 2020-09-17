@@ -342,3 +342,43 @@ def run_all_models_and_score_k_fold(df):
             for j, name in enumerate(metrics_names):
                   st.write(name, k_fold_score_new(df, model_names[i])[j-1]) #r2, mse, rmse, mae, acc, bacc, prec, rec, f1
             st.write('')
+
+def new_run_all_models_and_score_k_fold(df):
+    
+    model_names = ['**Log Regression**', '**KNN**', '**Multinomial**', '**Random Forest**', '**Bernoulli**', '**Gaussian**']
+    
+    metrics_names = [
+        'R2: ', 'MSE: ', 'RMSE: ', 'MAE: ',
+        'Accuracy: ', 'Balanced Acc: ', 'Precision: ',
+        'Recall: ', 'F1 Score: '
+    ]
+
+    model_dict = {}
+
+
+
+    for i, model in enumerate(model_names):
+        if i < 4:
+
+            # model_dict[model_names[i]] = 
+
+            st.write(model_names[i])
+            st.write('')
+            st.write('kfold score: ',k_fold_score_new(df, model_names[i])[0]*100,'%') #prints score kfold
+            st.write('')
+
+            for j, name in enumerate(metrics_names):
+                  st.write(name, k_fold_score_new(df, model_names[i])[j-1]) #r2, mse, rmse, mae, acc, bacc, prec, rec, f1
+
+            st.write('')
+
+        else:
+
+            st.write(model_names[i])
+            st.write('')
+            st.write('kfold score: ',k_fold_score_new(df, model_names[i])[0]*100,'%') #prints score kfold
+            st.write('')
+            
+            for j, name in enumerate(metrics_names):
+                  st.write(name, k_fold_score_new(df, model_names[i])[j-1]) #r2, mse, rmse, mae, acc, bacc, prec, rec, f1
+            st.write('')

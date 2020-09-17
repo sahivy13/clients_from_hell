@@ -21,7 +21,7 @@ import platform
 from PIL import Image
 
 # Streamlit Cache
-@st.cache(suppress_st_warning=True)
+@st.cache(suppress_st_warning=True, allow_output_mutation=True)
 
 def main_pipe(obj, *fns):
     return functools.reduce(lambda x, y: y(x), [obj] + list(fns))
@@ -45,7 +45,7 @@ def hist_of_target_creator(df, target = 'category'):
     return df
 
 def streamlit_pipe_write_before(df_):
-    st.write(f"**Before Over-Under-Sampling")
+    st.write(f"**Before Over-Under-Sampling**")
     return(df_)
     
 def streamlit_pipe_write_after(df_):
@@ -61,13 +61,25 @@ def streamlit_pipe_write_paragraph(url):
     return(url)
 
 def streamlit_pipe_write_intro():
-    st.markdown("<h1 style='text-align: center; color: black;'>Supervised Machine Learning</h1>", unsafe_allow_html=True)
-    st.markdown("<h1 style='text-align: center; color: black;'>Algorithms Classifier</h1>", unsafe_allow_html=True)
-    st.markdown("<h3 style='text-align: center; color: black;'>the scrapped website: <a class='cfh-link' href='https://clientsfromhell.net/'>Clients From Hell</a></h1>", unsafe_allow_html=True) 
+    path_web_logo = "web_logo.png"
+    web_logo = Image.open(path_web_logo)
     path_cfh_logo = "cfh_logo.png"
     cfh_logo = Image.open(path_cfh_logo)
-    st.image(cfh_logo, width = 400)
-    st.write(f"")
+    
+
+    # st.markdown("<img src='https://raw.githubusercontent.com/sahivy13/clients_from_hell/master/cfh_logo.png' alt='cfh_logo' class='center' />")
+
+    # st.markdown("[![cfh_logo_link](https://raw.githubusercontent.com/sahivy13/clients_from_hell/master/cfh_logo.png)](https://clientsfromhell.net/)")
+    st.image(web_logo, width = 85)
+    st.markdown("<h1 style='text-align: center; color: black;'>Supervised Machine Learning</h1>", unsafe_allow_html=True)
+    st.markdown("<h2 style='text-align: center; color: black;'>Classifier Algorithms </h2>", unsafe_allow_html=True)
+    st.image(cfh_logo, width = 300)
+    st.markdown("<h4 style='text-align: center; color: black;'>Sourced from:  <a class='website-link' href='https://clientsfromhell.net/'>Clients From Hell</a></h1>", unsafe_allow_html=True)
+    st.markdown("<h4 style='text-align: center; color: black;'>Created by: <a class='website-link' href='https://sahivy.com/'>Sahivy R. Gonzalez</a></h1>", unsafe_allow_html=True)
+    
+    st.write("")
+    
+
     st.markdown(
         "<p style='text-align: center;'>Each post made on the website is a story from freelancers.</p>",
         unsafe_allow_html=True
@@ -103,16 +115,24 @@ def move_old(folder):
     
     move_data()
 
+# def glob_num_samples_creator():
+#     global num_samples
+#         num_samples = st.sidebar.slider(
+#         "Choose # of samples for each category:",
+#         min_value=None,
+#         max_value=None,
+#         value=mid_num
+#     )
+#     st.sidebar.markdown("- - -")
+
 with open("style.css") as f:
     st.markdown('<style>{}</style>'.format(f.read()), unsafe_allow_html=True)
 
-path = "web_logo.png"
-image = Image.open(path)
-
-st.image(image, width = 100)
-
 # START SIDE BAR
+
+st.sidebar.subheader("Pre-Processing")
 use_current_data = st.sidebar.selectbox("Re-scrappe website?", ("No", "Yes"))
+
 
 # Intro
 streamlit_pipe_write_intro()
