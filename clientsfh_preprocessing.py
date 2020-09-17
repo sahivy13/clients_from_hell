@@ -6,6 +6,9 @@ from nltk.corpus import stopwords
 from collections import Counter
 import string
 from sklearn.feature_extraction.text import TfidfVectorizer
+from imblearn.under_sampling import RandomUnderSampler
+from imblearn.over_sampling import RandomOverSampler
+import pickle
 
 # Stating random seed
 np.random.seed(42)
@@ -120,6 +123,27 @@ def catetory_replacer(df, col = 'category', mul = True, main_cat = "Deadbeats"):
     
     return df, dic_cat
 
+def over_under_sampling(df):
+
+    list_count = Counter(df['category']).most_common()
+    mid_num = int(((list_count[0][1]-list_count[9][1])/2))
+    mid_num = mid_num+list_count[9][1]
+    strategy = dict(Counter(df['category']))
+    for i in range(len(strategy)):
+        if strategy[i] < mid_num:
+            strategy[i] = mid_num
+    ros = RandomOverSampler(sampling_strategy=strategy, random_state=42)
+    rus = RandomUnderSampler(random_state=42)
+
+    X = df.drop(['category'], axis=1)
+    y = df[['category']]
+
+    X_ros, y_ros = ros.fit_resample(X, y)
+    X_rous, y_rous = rus.fit_resample(X_ros, y_ros)
+    o_u_sample = X_rous.join(y_rous)
+
+    return o_u_sample 
+
 def under_sampling_to_2_col_by_index(df, high = 0, low = 1, col_name = 'category'):
     
     low_size = len(df[df[col_name] == low])
@@ -147,14 +171,18 @@ def convert_to_tfidf(df, case_col = 'case', target_col = 'category'):
     columns = tfidf.get_feature_names()
     )
 
+    with open ('tfidf.pickle', 'wb') as f:
+        pickle.dump(tfidf,f)
+
     df_ = features.merge(df[target_col], left_index=True, right_index= True)
     
     return df_
 
-def data_to_csv(obj_df_dic, now):
-    obj_df_dic[0].to_csv("data/data.csv" ) # now variable is a global variable in main.py
-    df = obj_df_dic[0]
-    return df
+def convert_new_post_to_tfidf(df, case_col = 'case', target_col = 'category')
+
+def data_to_csv(obj_df_dic):
+    obj_df_dic.to_csv("data/data.csv" ) # now variable is a global variable in main.py
+    return obj_df_dic
 
 def data_from_csv(path):
     df = pd.read_csv(path)

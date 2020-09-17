@@ -149,7 +149,7 @@ def convert_to_tfidf(df, case_col = 'case', target_col = 'category'):
     return df_
 
 def data_to_csv(obj_df_dic):
-    obj_df_dic[0].to_csv("scrapped_data.csv")
+    obj_df_dic[0].to_csv("data.csv")
     df = obj_df_dic[0]
     return df
 
