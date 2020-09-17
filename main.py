@@ -112,7 +112,7 @@ image = Image.open(path)
 st.image(image, width = 100)
 
 # START SIDE BAR
-use_current_data = st.sidebar.selectbox("Re-scrape website?", ("No", "Yes"))
+use_current_data = st.sidebar.selectbox("Re-scrappe website?", ("No", "Yes"))
 
 # Intro
 streamlit_pipe_write_intro()

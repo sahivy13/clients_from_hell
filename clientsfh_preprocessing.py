@@ -178,7 +178,7 @@ def convert_to_tfidf(df, case_col = 'case', target_col = 'category'):
     
     return df_
 
-def convert_new_post_to_tfidf(df, case_col = 'case', target_col = 'category')
+# def convert_new_post_to_tfidf(df, case_col = 'case', target_col = 'category'):
 
 def data_to_csv(obj_df_dic):
     obj_df_dic.to_csv("data/data.csv" ) # now variable is a global variable in main.py
