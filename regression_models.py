@@ -13,6 +13,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.naive_bayes import BernoulliNB
 from sklearn.naive_bayes import GaussianNB
 from sklearn.model_selection import KFold
+from sklearn.model_selection import StratifiedKFold
 
 # Model saving
 import pickle
@@ -41,7 +42,7 @@ def all_num_models_fitting(X_train, y_train):
 
     if os.path.isfile('rfc'):
 
-        list_ = ['log_regr', 'knn', 'multi', 'rfc']
+        list_ = ['log_regr.pickle', 'knn.pickle', 'multi.pickle', 'rfc.pickle']
 
         with open (list_[0], 'rb') as f :
             log_regr = pickle.load(f)
@@ -54,6 +55,11 @@ def all_num_models_fitting(X_train, y_train):
 
         with open (list_[3], 'rb') as f :
             rfc = pickle.load(f)
+
+        log_regr.fit(X_train, y_train.values.ravel())
+        knn.fit(X_train, y_train.values.ravel())
+        multi.fit(X_train, y_train.values.ravel())
+        rfc.fit(X_train, y_train.values.ravel())
 
     else:
         log_regr = LogisticRegression(solver = 'lbfgs')
@@ -72,7 +78,7 @@ def all_num_models_fitting(X_train, y_train):
         rfc.fit(X_train, y_train.values.ravel())
         # d_rfc = copy.deepcopy(rfc)
 
-        list_ = [('log_regr', log_regr), ('knn', knn), ('multi', multi), ('rfc', rfc)]
+        list_ = [('log_regr.pickle', log_regr), ('knn.pickle', knn), ('multi.pickle', multi), ('rfc.pickle', rfc)]
 
         for mod in list_:
             with open (mod[0], 'wb') as f:
@@ -85,15 +91,18 @@ def all_num_models_fitting(X_train, y_train):
 
 def all_bool_models_fitting(X_train, y_train):
 
-    if os.path.isfile('guassian'):
+    if os.path.isfile('guassian.pickle'):
 
-        list_ = ['bernoulli', 'guassian']
+        list_ = ['bernoulli.pickle', 'guassian.pickle']
 
         with open (list_[0], 'rb') as f :
             bernoulli = pickle.load(f)
 
         with open (list_[1], 'rb') as f :
             guassian = pickle.load(f)
+
+        bernoulli.fit(X_train, y_train.values.ravel())
+        guassian.fit(X_train, y_train.values.ravel())
 
     else: 
 
@@ -103,7 +112,7 @@ def all_bool_models_fitting(X_train, y_train):
         guassian = GaussianNB().fit(X_train, y_train.values.ravel())
         # d_guassian = copy.deepcopy(guassian)
         
-        list_ = [('bernoulli', bernoulli), ('guassian', guassian)]
+        list_ = [('bernoulli.pickle', bernoulli), ('guassian.pickle', guassian)]
 
         for mod in list_:
             with open (mod[0], 'wb') as f:
@@ -172,6 +181,8 @@ def k_fold_score_new(df, model_name, target = 'category'):
         models = all_num_models_fitting(X_train, y_train) #log_regr, knn, multi, rfc
         models = models + all_bool_models_fitting(X_train_bool, y_train) #adding ber, gau
         
+
+
         model_names = {
             '**Log Regression**': 0, '**KNN**': 1,
             '**Multinomial**': 2, '**Random Forest**': 3,
@@ -179,10 +190,11 @@ def k_fold_score_new(df, model_name, target = 'category'):
         }
 
         # model_names.get(model_name)
-        
+
         if model_names.get(model_name) < 4:
 
-            score = models[model_names.get(model_name)].score(X_test, y_test) #returns score 
+            model = models[model_names.get(model_name)]
+            score = model.score(X_test, y_test) #returns score 
             scores.append(score)
 
             prediction = predict(models[model_names.get(model_name)], X_test)
@@ -293,7 +305,6 @@ def k_fold_score_new(df, model_name, target = 'category'):
     rec_avg = avg_score(rec_scores)
     f1_avg = avg_score(f1_scores)
 
-
     return (
         score_avg, r2_avg, mse_avg,
         rmse_avg, mae_avg, acc_avg,
@@ -309,7 +320,7 @@ def rescale_numbers(df, scaler = MinMaxScaler):
             
     return df
 
-def run_all_models_and_score_k_fold(df):
+# def run_all_models_and_score_k_fold(df):
     
     model_names = ['**Log Regression**', '**KNN**', '**Multinomial**', '**Random Forest**', '**Bernoulli**', '**Gaussian**']
     
@@ -353,32 +364,82 @@ def new_run_all_models_and_score_k_fold(df):
         'Recall: ', 'F1 Score: '
     ]
 
-    model_dict = {}
+    # df_metrics = pd.DataFrame(
+    #     columns= [
+    #         'Model', 'KFold_Score', 'R2: ',
+    #         'MSE', 'RMSE', 'MAE','Accuracy',
+    #         'Balanced_Acc', 'Precision:', 'Recall', 'F1_Score'
+    #     ]
+    # )
 
+    for i, model_n in enumerate(model_names):
 
+        # model_metrics_dict = {}
 
-    for i, model in enumerate(model_names):
-        if i < 4:
+        metrics_i = k_fold_score_new(df, model_names[i])
 
-            # model_dict[model_names[i]] = 
+        # if i < 4:
 
-            st.write(model_names[i])
+        st.write(model_n)
+        st.write('')
+        st.write('kfold score: ',metrics_i[0]*100,'%') #prints score kfold
+        st.write('')
+
+        for j, name in enumerate(metrics_names):
+            st.write(name, metrics_i[j-1]) #r2, mse, rmse, mae, acc, bacc, prec, rec, f1
+
             st.write('')
-            st.write('kfold score: ',k_fold_score_new(df, model_names[i])[0]*100,'%') #prints score kfold
-            st.write('')
 
-            for j, name in enumerate(metrics_names):
-                  st.write(name, k_fold_score_new(df, model_names[i])[j-1]) #r2, mse, rmse, mae, acc, bacc, prec, rec, f1
+        # else:
 
-            st.write('')
-
-        else:
-
-            st.write(model_names[i])
-            st.write('')
-            st.write('kfold score: ',k_fold_score_new(df, model_names[i])[0]*100,'%') #prints score kfold
-            st.write('')
+        #     st.write(model_n)
+        #     st.write('')
+        #     st.write('kfold score: ',metrics_i[0]*100,'%') #prints score kfold
+        #     st.write('')
             
-            for j, name in enumerate(metrics_names):
-                  st.write(name, k_fold_score_new(df, model_names[i])[j-1]) #r2, mse, rmse, mae, acc, bacc, prec, rec, f1
-            st.write('')
+        #     for j, name in enumerate(metrics_names):
+        #           st.write(name, metrics_i[j-1]) #r2, mse, rmse, mae, acc, bacc, prec, rec, f1
+        #     st.write('')
+
+# --- New Added ---
+
+def kfold_cross_validation(df, k = 10): 
+    """ 
+    K_Fold:
+    
+        - k at 10 has been found through epxperimentation to generally 
+            result in a model skill estimate with loaw bias and a modest variance.
+
+    Cross-Validation:
+
+    - Train/Test Split: Taken to one extreme, k may be set to 2 (not 1) such that a single
+        train/test split is created to evaluate the model.
+
+    - LOOCV: Taken to another extreme, k may be set to the total number of observations
+        in the dataset such that each observation is given a chance to be the held out of the dataset.
+        This is called leave-one-out cross-validation, or LOOCV for short.
+
+    - Stratified: The splitting of data into folds may be governed by criteria such as
+        ensuring that each fold has the same proportion of observations with a given categorical value,
+        such as the class outcome value. This is called stratified cross-validation.
+
+    - Repeated: This is where the k-fold cross-validation procedure is repeated n times,
+        where importantly, the data sample is shuffled prior to each repetition,
+        which results in a different split of the sample.
+
+     - Nested: This is where k-fold cross-validation is performed within each fold of cross-validation,
+        often to perform hyperparameter tuning during model evaluation. 
+        This is called nested cross-validation or double cross-validation.
+    """
+    # --- CREATING KFOLD SPLIT ---
+
+    kfold = StratifiedKFold(n_splits = k, shuffle = True, random_state = 42)
+
+    # for train_ix, test_ix in kfold.split(X, y):
+    #     train_X, test_X = X[train_ix], X[test_ix]
+    #     train_y, test_y = y[train_ix], y[test_ix]     
+
+    # --- CREATING MODELS ---
+
+    
+    

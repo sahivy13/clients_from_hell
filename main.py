@@ -72,7 +72,7 @@ def streamlit_pipe_write_intro():
     # st.markdown("[![cfh_logo_link](https://raw.githubusercontent.com/sahivy13/clients_from_hell/master/cfh_logo.png)](https://clientsfromhell.net/)")
     st.image(web_logo, width = 85)
     st.markdown("<h1 style='text-align: center; color: black;'>Supervised Machine Learning</h1>", unsafe_allow_html=True)
-    st.markdown("<h2 style='text-align: center; color: black;'>Classifier Algorithms </h2>", unsafe_allow_html=True)
+    st.markdown("<h2 style='text-align: center; color: black;'>Classifier Algorithm Trainer Bot </h2>", unsafe_allow_html=True)
     st.image(cfh_logo, width = 300)
     st.markdown("<h4 style='text-align: center; color: black;'>Sourced from:  <a class='website-link' href='https://clientsfromhell.net/'>Clients From Hell</a></h1>", unsafe_allow_html=True)
     st.markdown("<h4 style='text-align: center; color: black;'>Created by: <a class='website-link' href='https://sahivy.com/'>Sahivy R. Gonzalez</a></h1>", unsafe_allow_html=True)
@@ -93,27 +93,34 @@ def streamlit_pipe_write_intro():
         unsafe_allow_html=True
         )
 
-def move_old(folder):
-    def creation_date(path_to_file):
-    
-        if platform.system() == 'Windows':
-            return os.path.getctime(path_to_file)
-        else:
-            stat = os.stat(path_to_file)
-            try:
-                return stat.st_birthtime
-            except AttributeError:
-                # We're probably on Linux. No easy way to get creation dates here,
-                # so we'll settle for when its content was last modified.
-                return stat.st_mtime
+def creation_date(path_to_file):
 
-    def move_data():
-        os.rename(
+    if platform.system() == 'Windows':
+        return os.path.getctime(path_to_file)
+    else:
+        stat = os.stat(path_to_file)
+        try:
+            return stat.st_birthtime
+        except AttributeError:
+            # We're probably on Linux. No easy way to get creation dates here,
+            # so we'll settle for when its content was last modified.
+            return stat.st_mtime
+
+def move_old(folder):
+    os.rename(
         f"{folder}/{folder}.csv",
         f"{folder}/previous_{folder}/{folder}_{creation_date(f'{folder}/{folder}.csv')}.csv"
-        )
+    )
+
+def save_all_models(folder):
+    list_ = ['log_regr.pickle', 'knn.pickle', 'multi.pickle', 'rfc.pickle', 'bernoulli.pickle', 'guassian.pickle']
     
-    move_data()
+    for i in list_:
+        os.rename(
+            f"{i}",
+            f"{folder}/{i}"
+        )
+
 
 # def glob_num_samples_creator():
 #     global num_samples
@@ -152,7 +159,7 @@ if use_current_data == "No":
             CP.over_under_sampling,
             streamlit_pipe_write_after,hist_of_target_creator,
             CP.convert_to_tfidf,
-            RM.run_all_models_and_score_k_fold
+            RM.new_run_all_models_and_score_k_fold
         )
 
     else:
@@ -178,7 +185,7 @@ if use_current_data == "No":
             CP.over_under_sampling,
             streamlit_pipe_write_after,hist_of_target_creator,
             CP.convert_to_tfidf,
-            RM.run_all_models_and_score_k_fold
+            RM.new_run_all_models_and_score_k_fold
         )
 
 else:
@@ -207,8 +214,11 @@ else:
                 CP.over_under_sampling,
                 streamlit_pipe_write_after,hist_of_target_creator,
                 CP.convert_to_tfidf,
-                RM.run_all_models_and_score_k_fold
+                RM.new_run_all_models_and_score_k_fold
             )
+
+if st.sidebar.button("Save Trained Model"):
+        save_all_models('saved_models')
 
 # with st.echo():
 #     main_pipe(

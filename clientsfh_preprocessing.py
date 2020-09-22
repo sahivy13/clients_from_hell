@@ -139,19 +139,20 @@ def over_under_sampling(df):
             value=mid_num
         )
         if st.sidebar.button("Re-Train"):
-            for path in ['bernoulli', 'guassian', 'knn', 'log_regr', 'multi', 'rfc']:
+            for path in ['bernoulli.pickle', 'guassian.pickle', 'knn.pickle', 'log_regr.pickle', 'multi.pickle', 'rfc.pickle']:
                 if os.path.exists(path):
                     os.remove(path)
             st.caching.clear_cache()
     else:
         num_samples = mid_num
         if st.sidebar.button("Re-Train"):
-            for path in ['bernoulli', 'guassian', 'knn', 'log_regr', 'multi', 'rfc']:
+            for path in ['bernoulli.pickle', 'guassian.pickle', 'knn.pickle', 'log_regr.pickle', 'multi.pickle', 'rfc.pickle']:
                 if os.path.exists(path):
                     os.remove(path)
             st.caching.clear_cache()
-            
+
     strategy = dict(Counter(df['category']))
+    
     for i in range(len(strategy)):
         if strategy[i] < num_samples:
             strategy[i] = num_samples
