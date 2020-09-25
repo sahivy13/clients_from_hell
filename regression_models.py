@@ -12,8 +12,14 @@ from sklearn.naive_bayes import MultinomialNB
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.naive_bayes import BernoulliNB
 from sklearn.naive_bayes import GaussianNB
+
+# Cross Validation
 from sklearn.model_selection import KFold
 from sklearn.model_selection import StratifiedKFold
+from sklearn.model_selection import cross_validate
+from sklearn.metrics import make_scorer
+from sklearn.model_selection import GridSearchCV
+
 
 # Model saving
 import pickle
@@ -31,9 +37,8 @@ from sklearn.metrics import precision_score
 from sklearn.metrics import recall_score
 from sklearn.metrics import f1_score
 
-# Model preprocessing
-# from sklearn.feature_extraction.text import TfidfVectorizer -> imported by another .py file
-from sklearn.preprocessing import MinMaxScaler
+# Streamlit
+import streamlit as st
 
 # # Stating random seed
 # np.random.seed(42)
@@ -123,33 +128,16 @@ def all_bool_models_fitting(X_train, y_train):
     
     return bernoulli, guassian
 
-def model_score(model, X_test, y_test):
-    
-    score = model.score(X_test, y_test)*100
-    
-    if score >= 50.0:
-        
-        print('Score: ',score,'%')
-        print("DON'T GET COCKY NOW!!! KEEP MAKING IT BETTER!")
-        print('')
-    elif score < 50.0:
-        
-        print('Score: ',score,'%')
-        print("Your algorithm stinks so much, I could toss a coin and make better predictions =P...")
-        print('')
-    
-    return score
-
-def predict(model, X_test):
-    prediction = model.predict(X_test)
-    return prediction
-
 def evaluate_model(model, train_X, test_X, train_y, test_y):
     
     model = model.fit(train_X, train_y)
     score = model.score(test_X, test_y)
     #     print(f"Accuracy: {round(score, 2)}")
     return model, score
+
+def predict(model, X_test):
+    prediction = model.predict(X_test)
+    return prediction
 
 def k_fold_score_new(df, model_name, target = 'category'):
     scores = []
@@ -220,7 +208,7 @@ def k_fold_score_new(df, model_name, target = 'category'):
             prec = precision_score(
                 y_test,
                 prediction,
-                pos_label = 2,
+                pos_label = 10,
                 average = 'weighted'
             )
             prec_scores.append(prec)
@@ -228,7 +216,7 @@ def k_fold_score_new(df, model_name, target = 'category'):
             rec = recall_score(
             y_test,
             prediction,
-            pos_label = 2,
+            pos_label = 10,
             average = 'weighted'
             )
             rec_scores.append(rec)
@@ -236,7 +224,7 @@ def k_fold_score_new(df, model_name, target = 'category'):
             f1 = f1_score(
                 y_test,
                 prediction,
-                pos_label = 2,
+                pos_label = 10,
                 average = 'weighted'
             )
             f1_scores.append(f1)
@@ -310,15 +298,6 @@ def k_fold_score_new(df, model_name, target = 'category'):
         rmse_avg, mae_avg, acc_avg,
         bacc_avg, prec_avg, rec_avg, f1_avg
         )
-
-def rescale_numbers(df, scaler = MinMaxScaler):
-    for col in df:
-        if col != 'category':
-            if df[col].dtype in ['int64', 'float64']:
-                numbers = df[col].astype(float).values.reshape(-1, 1)
-                df[col] = scaler().fit_transform(numbers)
-            
-    return df
 
 # def run_all_models_and_score_k_fold(df):
     
@@ -403,43 +382,215 @@ def new_run_all_models_and_score_k_fold(df):
 
 # --- New Added ---
 
-def kfold_cross_validation(df, k = 10): 
-    """ 
-    K_Fold:
+# def kfold_cross_validation(df, k = 10, target = 'category'): 
+    # """ 
+    # K_Fold:
     
-        - k at 10 has been found through epxperimentation to generally 
-            result in a model skill estimate with loaw bias and a modest variance.
+    #     - k at 10 has been found through epxperimentation to generally 
+    #         result in a model skill estimate with loaw bias and a modest variance.
 
-    Cross-Validation:
+    # Cross-Validation:
 
-    - Train/Test Split: Taken to one extreme, k may be set to 2 (not 1) such that a single
-        train/test split is created to evaluate the model.
+    # - Train/Test Split: Taken to one extreme, k may be set to 2 (not 1) such that a single
+    #     train/test split is created to evaluate the model.
 
-    - LOOCV: Taken to another extreme, k may be set to the total number of observations
-        in the dataset such that each observation is given a chance to be the held out of the dataset.
-        This is called leave-one-out cross-validation, or LOOCV for short.
+    # - LOOCV: Taken to another extreme, k may be set to the total number of observations
+    #     in the dataset such that each observation is given a chance to be the held out of the dataset.
+    #     This is called leave-one-out cross-validation, or LOOCV for short.
 
-    - Stratified: The splitting of data into folds may be governed by criteria such as
-        ensuring that each fold has the same proportion of observations with a given categorical value,
-        such as the class outcome value. This is called stratified cross-validation.
+    # - Stratified: The splitting of data into folds may be governed by criteria such as
+    #     ensuring that each fold has the same proportion of observations with a given categorical value,
+    #     such as the class outcome value. This is called stratified cross-validation.
 
-    - Repeated: This is where the k-fold cross-validation procedure is repeated n times,
-        where importantly, the data sample is shuffled prior to each repetition,
-        which results in a different split of the sample.
+    # - Repeated: This is where the k-fold cross-validation procedure is repeated n times,
+    #     where importantly, the data sample is shuffled prior to each repetition,
+    #     which results in a different split of the sample.
 
-     - Nested: This is where k-fold cross-validation is performed within each fold of cross-validation,
-        often to perform hyperparameter tuning during model evaluation. 
-        This is called nested cross-validation or double cross-validation.
-    """
-    # --- CREATING KFOLD SPLIT ---
+    #  - Nested: This is where k-fold cross-validation is performed within each fold of cross-validation,
+    #     often to perform hyperparameter tuning during model evaluation. 
+    #     This is called nested cross-validation or double cross-validation.
+    # """
+    # # --- KFOLD & DATA ---
+
+    # kfold = StratifiedKFold(n_splits = k, shuffle = True, random_state = 42)
+    # features = df[[col for col in df if col != target]]
+    # target = df[target]   
+
+    # # --- CREATING MODELS ---
+
+    # def create_models():
+    #     models = list()
+
+    #     models.append(LogisticRegression(solver = 'lbfgs'))
+    #     models.append(KNeighborsClassifier(n_neighbors = 3)) # k = 5 by default
+    #     models.append(MultinomialNB())
+    #     models.append(RandomForestClassifier(max_depth=10, random_state=42))
+
+    #     return models
+
+    # # --- CROSS_VALIDATION ---
+
+    # def cv_eval_model(model, cv, X, y):
+
+    #     scoring = {
+    #         'R2': make_scorer(r2_score, average = 'samples'),
+    #         'MSE': make_scorer(mean_squared_error, average = 'samples'),
+    #         'MAE': make_scorer(mean_absolute_error, average = 'samples'),
+    #         'Accuracy': make_scorer(accuracy_score, average = 'samples'),
+    #         'Balanced_Acc': make_scorer(balanced_accuracy_score, average = 'samples'),
+    #         'Precision': make_scorer(precision_score, average = 'samples'),
+    #         'Recall': make_scorer(recall_score, average = 'samples'),
+    #         'F1': make_scorer(f1_score, average = 'samples'),
+    #     }
+
+    #     cross_val_obj = cross_validate(model, X, y, scoring = scoring, cv = cv, n_jobs = -1, return_estimator = True)
+
+    #     trained_model = cross_val_obj['estimator'][-1]
+
+    #     return trained_model, cross_val_obj
+
+    # # --- RUNNING CROSS-VALIDATION ---
+
+    # def run_cross_val(models, cv = kfold, X = features, y = target):
+    #     for model in models:
+    #         trained_model, cv_mean = cv_eval_model(model, cv, X, y)
+
+    #         with open (model.__name__, 'wb') as f:
+    #             pickle.dump(model,f) 
+
+def kfold_cross_validation(df, k = 10, target = 'category'): 
+    # --- KFOLD & DATA ---
 
     kfold = StratifiedKFold(n_splits = k, shuffle = True, random_state = 42)
-
-    # for train_ix, test_ix in kfold.split(X, y):
-    #     train_X, test_X = X[train_ix], X[test_ix]
-    #     train_y, test_y = y[train_ix], y[test_ix]     
+    features = df[[col for col in df if col != target]]
+    target = df[target]   
 
     # --- CREATING MODELS ---
 
+    def create_models():
+        models = list()
+
+        models.append(LogisticRegression(solver = 'lbfgs'))
+        models.append(KNeighborsClassifier(n_neighbors = 3)) # k = 5 by default
+        models.append(MultinomialNB())
+        models.append(RandomForestClassifier(max_depth=10, random_state=42))
+
+        return models
+
+    # --- CROSS_VALIDATION ---
+
+    def cv_eval_model(model, cv, X, y):
+
+        scoring = {
+            'R2': make_scorer(r2_score),
+            'MSE': make_scorer(mean_squared_error),
+            'MAE': make_scorer(mean_absolute_error),
+            'Accuracy': make_scorer(accuracy_score),
+            'Balanced_Acc': make_scorer(balanced_accuracy_score),
+            'Precision': make_scorer(precision_score, average = 'macro'),
+            'Recall': make_scorer(recall_score, average = 'macro'),
+            'F1': make_scorer(f1_score, average = 'macro'),
+        }
+
+        cross_val_obj = cross_validate(model, X, y, scoring = scoring, cv = cv, n_jobs = -1, return_estimator = True)  
+
+        return cross_val_obj # trained_model, 
+
+    # --- RUNNING CROSS-VALIDATION ---
+
+    def run_cross_val(models, cv = kfold, X = features, y = target):
+        dict_df = dict()
+
+        for model in models:
+            cv_mean = cv_eval_model(model, cv, X, y) #trained_model, 
+
+            # with open (type(model).__name__, 'wb') as f:
+            #     pickle.dump(model,f) 
+
+            dict_df[type(model).__name__] = cv_mean
+
+        return dict_df
+
+    models_ = create_models()
+    dict_df = run_cross_val(models = models_)
+    return dict_df
     
+def best_model(df, k = 10, target = 'category'):
+    # --- KFOLD & DATA ---
+
+    kfold = StratifiedKFold(n_splits = k, shuffle = True, random_state = 42)
+    features = df[[col for col in df if col != target]]
+    target = df[target]  
+
+    # --- CREATE MODELS ---
+
+    def create_models():
+        models = list()
+
+        models.append(LogisticRegression(solver = 'lbfgs'))
+        models.append(KNeighborsClassifier()) # k = 5 by default
+        models.append(MultinomialNB())
+        models.append(RandomForestClassifier(random_state=42))
+
+        return models
+
+    # --- SCORES ---
+
+    scoring = {
+    'R2': make_scorer(r2_score),
+    'MSE': make_scorer(mean_squared_error),
+    'MAE': make_scorer(mean_absolute_error),
+    'Accuracy': make_scorer(accuracy_score),
+    'Balanced_Acc': make_scorer(balanced_accuracy_score),
+    'Precision': make_scorer(precision_score, average = 'macro'),
+    'Recall': make_scorer(recall_score, average = 'macro'),
+    'F1': make_scorer(f1_score, average = 'macro'),
+    }
+
+    # --- PARAMETERS ---
+        # LR
+    Cs = [0.001, 0.01, 0.1, 0.3, 1, 3, 10, 100]
+
+        # KNN
+    n_neighbors_ = [3, 5, 8]
+        # MultiNB
+    alphas = [0, 0.5, 1.0]
+        # RandomForest
+    n_estimators_ = [50, 100, 150]
+    max_features_ = ['sqrt', 'log2']
+    ccp_alphas = [0, 0.5, 1]
+
+    dict_param_grid = {
+        'LogisticRegression': {'C': Cs},
+        'KNeighborsClassifier': {'n_neighbors': n_neighbors_},
+        'MultinomialNB': {'alpha': alphas},
+        'RandomForestClassifier': {'n_estimators': n_estimators_, 'max_features': max_features_, 'ccp_alpha': ccp_alphas}
+    }
+
+    # --- RUNNING GRIDSEARCHCV
+    models = create_models()
+
+    df_models = pd.DataFrame(columns = ['model_name', 'best_params', 'best_score', 'best_model'])
+
+    # --- PROGRESS BAR ---
+    my_bar = st.progress(0)
+
+    for i, model in enumerate(models):
+        param_grid = dict_param_grid[type(model).__name__]
+        grid_search = GridSearchCV(
+            model,
+            param_grid,
+            cv = kfold,
+            scoring = scoring,
+            refit = 'Accuracy',
+            n_jobs = -1
+        )
+        grid_search.fit(features, target)
+
+        df_input = pd.DataFrame({'model_name':[f'{type(model).__name__}'], 'best_params':[grid_search.best_params_], 'best_score':[grid_search.best_score_], 'best_model': [grid_search.best_estimator_]})
+        df_models = pd.concat([df_models,df_input], axis = 0, sort = False).reset_index(drop = True)
+
+        my_bar.progress((i+1)/len(models))
+
+    return df_models
     

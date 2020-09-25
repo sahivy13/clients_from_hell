@@ -1,0 +1,2 @@
+,model_name,best_params,best_score
+3,RandomForestClassifier,"{'ccp_alpha': 0, 'max_features': 'sqrt', 'n_estimators': 100}",0.8369565217391305

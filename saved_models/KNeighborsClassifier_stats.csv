@@ -1,0 +1,2 @@
+,model_name,best_params,best_score
+1,KNeighborsClassifier,{'n_neighbors': 3},0.6978260869565218

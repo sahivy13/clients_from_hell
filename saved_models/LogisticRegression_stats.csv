@@ -1,0 +1,2 @@
+,model_name,best_params,best_score
+0,LogisticRegression,{'C': 3},0.8717391304347826

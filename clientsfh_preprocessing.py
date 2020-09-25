@@ -11,6 +11,8 @@ from imblearn.over_sampling import RandomOverSampler
 import pickle
 import streamlit as st
 import os
+from sklearn.preprocessing import MinMaxScaler
+
 # Stating random seed
 np.random.seed(42)
 
@@ -97,7 +99,7 @@ def cleaning(df : pd.DataFrame):
 
     return df_cases
 
-def catetory_replacer(df, col = 'category', mul = True, main_cat = "Deadbeats"):
+def category_replacer(df, col = 'category', mul = True, main_cat = "Deadbeats"):
 
     if mul == True: #--- MULTILABEL ---
         dic_cat = {}
@@ -203,6 +205,15 @@ def convert_to_tfidf(df, case_col = 'case', target_col = 'category'):
     return df_
 
 # def convert_new_post_to_tfidf(df, case_col = 'case', target_col = 'category'):
+
+def rescale_numbers(df, scaler = MinMaxScaler):
+    for col in df:
+        if col != 'category':
+            if df[col].dtype in ['int64', 'float64']:
+                numbers = df[col].astype(float).values.reshape(-1, 1)
+                df[col] = scaler().fit_transform(numbers)
+            
+    return df
 
 def data_to_csv(obj_df_dic):
     obj_df_dic.to_csv("data/data.csv" ) # now variable is a global variable in main.py

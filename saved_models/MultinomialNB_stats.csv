@@ -1,0 +1,2 @@
+,model_name,best_params,best_score
+2,MultinomialNB,{'alpha': 0},0.7847826086956522

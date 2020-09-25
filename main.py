@@ -17,22 +17,27 @@ import regression_models as RM
 import glob
 import os
 import platform
+import pickle
 
 from PIL import Image
 
 # Streamlit Cache
-@st.cache(suppress_st_warning=True, allow_output_mutation=True)
+# @st.cache(suppress_st_warning=True, allow_output_mutation=True)
 
 def main_pipe(obj, *fns):
     return functools.reduce(lambda x, y: y(x), [obj] + list(fns))
 
+# @st.cache(suppress_st_warning=True, allow_output_mutation=True)
 def scrappe_pipe(obj, *fns):
+    return functools.reduce(lambda x, y: y(x), [obj] + list(fns))
+
+@st.cache(suppress_st_warning=True, allow_output_mutation=True)
+def upload_pipe(obj, *fns):
     return functools.reduce(lambda x, y: y(x), [obj] + list(fns))
 
 @st.cache(suppress_st_warning=True, allow_output_mutation=True)
 def final_df_pipe(obj, *fns):
     return functools.reduce(lambda x, y: y(x), [obj] + list(fns))
-
 # def pipe(obj, *fns):
 #     return functools.reduce(lambda x, y: y(x), [obj] + list(fns))
 
@@ -113,26 +118,35 @@ def move_old(folder):
         f"{folder}/previous_{folder}/{folder}_{creation_date(f'{folder}/{folder}.csv')}.csv"
     )
 
-def save_all_models(folder):
-    list_ = ['log_regr.pickle', 'knn.pickle', 'multi.pickle', 'rfc.pickle', 'bernoulli.pickle', 'guassian.pickle']
+def show_df(df):
+    st.dataframe(df.style.highlight_max(axis=0))
+    return df
+
+def df_to_dict(df_models):
     
-    for i in list_:
-        os.rename(
-            f"{i}",
-            f"{folder}/{i}"
-        )
+    process_dict = dict()
+    
+    for model_name in list(df_models['model_name'].values):
+        model = df_models.loc[df_models['model_name'] == model_name, 'best_model'].values[0]
+        model_stat_df = df_models[df_models['model_name'] == model_name][['model_name', 'best_params', 'best_score']]
+        process_dict[model_name] = (model, model_stat_df)
 
+    return process_dict
 
-# def glob_num_samples_creator():
-#     global num_samples
-#         num_samples = st.sidebar.slider(
-#         "Choose # of samples for each category:",
-#         min_value=None,
-#         max_value=None,
-#         value=mid_num
-#     )
-#     st.sidebar.markdown("- - -")
+def save_all_or_one(process_dict):
 
+    model_selection = st.sidebar.selectbox("Choose model to save",tuple(process_dict.keys()))
+
+    if st.sidebar.button("Save"):
+        
+        stat_df = process_dict[model_selection][1]
+        model_chosen = process_dict[model_selection][0]
+
+        stat_df.to_csv(f'saved_models/{model_selection}_stats.csv')
+        with open (f'saved_models/{model_selection}.pickle', 'wb') as f:
+            pickle.dump(model_chosen,f)
+
+# STATING CSS
 with open("style.css") as f:
     st.markdown('<style>{}</style>'.format(f.read()), unsafe_allow_html=True)
 
@@ -150,17 +164,22 @@ if use_current_data == "No":
     if os.path.isfile('data/data.csv'):
         
         main_pipe(
-            upload_pipe(
-                CP.data_from_csv('data/data.csv'),
+            final_df_pipe(
+                upload_pipe(
+                    CP.data_from_csv('data/data.csv'),
+                    hist_of_target_creator,
+                    CP.category_replacer,
+                )[0],
+                streamlit_pipe_write_before,
                 hist_of_target_creator,
-                CP.catetory_replacer,
-            )[0],
-            streamlit_pipe_write_before,
-            hist_of_target_creator,
-            CP.over_under_sampling,
-            streamlit_pipe_write_after,hist_of_target_creator,
-            CP.convert_to_tfidf,
-            RM.new_run_all_models_and_score_k_fold
+                CP.over_under_sampling,
+                streamlit_pipe_write_after,hist_of_target_creator,
+                CP.convert_to_tfidf,
+                RM.best_model,
+                show_df
+            ),
+            df_to_dict,
+            save_all_or_one
         )
 
     else:
@@ -168,25 +187,30 @@ if use_current_data == "No":
         st.sidebar.write('Although "No" was selected, there was no previous data thus scrapping data from website')
 
         main_pipe(
-            scrappe_pipe(
-                "https://clientsfromhell.net/",
-                S.get_categories,
-                S.url_categroy_creator,
-                S.page_num_creator,
-                S.initialize_scraping,
-                CP.df_creator,
-                CP.cleaning,
-                hist_of_target_creator, 
-                CP.data_to_csv,
-                CP.catetory_replacer
-                )[0],
-            hist_of_target_creator,
-            streamlit_pipe_write_before,
-            hist_of_target_creator,
-            CP.over_under_sampling,
-            streamlit_pipe_write_after,hist_of_target_creator,
-            CP.convert_to_tfidf,
-            RM.new_run_all_models_and_score_k_fold
+            final_df_pipe(
+                scrappe_pipe(
+                    "https://clientsfromhell.net/",
+                    S.get_categories,
+                    S.url_categroy_creator,
+                    S.page_num_creator,
+                    S.initialize_scraping,
+                    CP.df_creator,
+                    CP.cleaning,
+                    hist_of_target_creator, 
+                    CP.data_to_csv,
+                    CP.category_replacer
+                    )[0],
+                hist_of_target_creator,
+                streamlit_pipe_write_before,
+                hist_of_target_creator,
+                CP.over_under_sampling,
+                streamlit_pipe_write_after,hist_of_target_creator,
+                CP.convert_to_tfidf,
+                RM.best_model,
+                show_df
+            ),
+            df_to_dict,
+            save_all_or_one
         )
 
 else:
@@ -195,9 +219,10 @@ else:
         move_old('data')
     except: 
         pass
-
+    
     main_pipe(
-                scrappe_pipe(
+        final_df_pipe(
+            scrappe_pipe(
                     "https://clientsfromhell.net/",
                     S.get_categories,
                     S.url_categroy_creator,
@@ -207,19 +232,25 @@ else:
                     CP.cleaning,
                     hist_of_target_creator,
                     CP.data_to_csv,
-                    CP.catetory_replacer,
-                    )[0],
-                hist_of_target_creator,
-                streamlit_pipe_write_before,
-                hist_of_target_creator,
-                CP.over_under_sampling,
-                streamlit_pipe_write_after,hist_of_target_creator,
-                CP.convert_to_tfidf,
-                RM.new_run_all_models_and_score_k_fold
-            )
+                    CP.category_replacer,
+            )[0],
+            hist_of_target_creator,
+            streamlit_pipe_write_before,
+            hist_of_target_creator,
+            CP.over_under_sampling,
+            streamlit_pipe_write_after,hist_of_target_creator,
+            CP.convert_to_tfidf,
+            RM.best_model,
+            show_df,
+        ),
+        df_to_dict,
+        save_all_or_one
+    )
 
-if st.sidebar.button("Save Trained Model"):
-        save_all_models('saved_models')
+# --- NOTABLE FUNCTIONS --- 
+
+# if st.sidebar.button("Save Trained Model"):
+#         save_all_models('saved_models')
 
 # with st.echo():
 #     main_pipe(
@@ -233,7 +264,7 @@ if st.sidebar.button("Save Trained Model"):
 #             CP.df_creator,
 #             CP.cleaning,
 #             hist_of_target_creator, 
-#             CP.catetory_replacer,
+#             CP.category_replacer,
 #             CP.data_to_csv
 #             ),
 #         streamlit_pipe_write_before,
@@ -243,3 +274,22 @@ if st.sidebar.button("Save Trained Model"):
 #         CP.convert_to_tfidf,
 #         RM.run_all_models_and_score_k_fold
 #     )
+
+# def save_all_models(folder):
+#     list_ = ['log_regr.pickle', 'knn.pickle', 'multi.pickle', 'rfc.pickle', 'bernoulli.pickle', 'guassian.pickle']
+    
+#     for i in list_:
+#         os.rename(
+#             f"{i}",
+#             f"{folder}/{i}"
+#         )
+
+# def glob_num_samples_creator():
+#     global num_samples
+#         num_samples = st.sidebar.slider(
+#         "Choose # of samples for each category:",
+#         min_value=None,
+#         max_value=None,
+#         value=mid_num
+#     )
+#     st.sidebar.markdown("- - -")
